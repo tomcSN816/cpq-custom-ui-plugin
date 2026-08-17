@@ -126,7 +126,7 @@ export default function ConfiguratorDemo() {
                     {products.map((p) => (
                       <tr key={p.uniqueIdentifier} style={{ borderBottom: '1px solid var(--border)' }}>
                         <td style={{ padding: '6px 4px', paddingLeft: 4 + (p.level ?? 0) * 14 }}>
-                          {p.name}
+                          {p.name || p.id}
                           <div className="muted" style={{ fontSize: 11 }}>{p.productCode}</div>
                         </td>
                         <td style={{ padding: '6px 4px', textAlign: 'right' }}>{p.quantity}</td>
