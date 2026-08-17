@@ -1,0 +1,8 @@
+{
+  "name": "new-cpq-demo",
+  "description": "Scaffold, deploy, and iterate on a Logik.io + ServiceNow CPQ demo front end, entirely by chatting in plain English.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Tom Champlin"
+  }
+}
