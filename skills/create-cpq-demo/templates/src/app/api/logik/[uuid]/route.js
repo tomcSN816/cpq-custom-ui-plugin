@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
       'Content-Type':  'application/vnd.logik.cfg-v2+json',
       'Accept':        'application/vnd.logik.cfg-v2+json',
       'Authorization': `Bearer ${process.env.LOGIK_TOKEN}`,
-      'Origin':        process.env.LOGIK_BASE_URL,
+      'Origin':        process.env.LOGIK_ORIGIN || process.env.LOGIK_BASE_URL,
     },
     body: JSON.stringify(body),
   });

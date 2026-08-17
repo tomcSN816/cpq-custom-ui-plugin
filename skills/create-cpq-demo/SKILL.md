@@ -54,12 +54,14 @@ Ask for these one at a time, in plain language (don't use these exact field name
 Run both checks with the values collected. Treat these as gating — do not scaffold or deploy on a failed check, instead tell the user plainly what failed and ask them to correct it.
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/check_logik.sh" "<base_url>" "<token>" "<product_id>"
+bash "${CLAUDE_SKILL_DIR}/scripts/check_logik.sh" "<base_url>" "<token>" "<product_id>" "http://localhost:3000"
 ```
 
 ```bash
 bash "${CLAUDE_SKILL_DIR}/scripts/check_servicenow.sh" "<instance_url>" "<username>" "<password>" "<account_name>"
 ```
+
+**If the Logik check fails with an empty-body 403** (as opposed to a JSON error body, or a 401), this is almost always an **Origin allowlist** problem, not a bad token or product ID: some Logik instances restrict the runtime API to a specific list of allowed Origins (visible as an "Origins" section in the Logik admin console for that instance), and the default guess of `http://localhost:3000` may not be on it. Tell the user plainly what's happening and ask them to check that section and add `http://localhost:3000` (for local dev) to it, then retry the check with that same origin value. Remember the working origin value — you'll need it again in Step 5 for the production URL.
 
 Summarize the result for the user in one sentence each ("Logik connection confirmed" / "ServiceNow connection confirmed") — don't paste the raw curl output at them unless something failed and they ask for detail.
 
@@ -78,6 +80,7 @@ Write `.env` in that directory (not `.env.example`) with the real values collect
 ```
 LOGIK_BASE_URL="<base_url>"
 LOGIK_TOKEN="<token>"
+LOGIK_ORIGIN="http://localhost:3000"
 NEXT_PUBLIC_LOGIK_PRODUCT_ID="<product_id>"
 NEXT_PUBLIC_LOGIK_PRICEBOOK_ID="<pricebook_id or blank>"
 SN_INSTANCE="<instance_url>"
@@ -120,13 +123,25 @@ printf '%s' "<value>" | vercel env add <VAR_NAME> production
 printf '%s' "<value>" | vercel env add <VAR_NAME> preview
 ```
 
-Do this for all 8 variables from the `.env` file above. Then deploy:
+Do this for all variables from the `.env` file above — set `LOGIK_ORIGIN` to `http://localhost:3000` for now, we'll fix it below. Then deploy:
 
 ```bash
 vercel --prod --yes
 ```
 
-Capture the production URL from the output and give it to the user directly. Confirm the site loads (you can `curl -sI <url>` and check for a 200/30x, though a 401 from Vercel's deployment-protection is also fine to just note).
+Capture the production URL from the output.
+
+**Now update `LOGIK_ORIGIN` to the real production URL** — the value used locally (`http://localhost:3000`) won't be on the Logik instance's Origin allowlist in production:
+
+```bash
+vercel env rm LOGIK_ORIGIN production --yes
+printf '%s' "<production_url>" | vercel env add LOGIK_ORIGIN production
+vercel --prod --yes
+```
+
+Tell the user they need to add `<production_url>` to the Origins allowlist in the Logik admin console for this instance (the same place they added `http://localhost:3000` during Step 2), or Logik calls from the live site will 403 the same way the local check did before that was fixed.
+
+Give the user the production URL directly. Confirm the site loads (you can `curl -sI <url>` and check for a 200/30x, though a 401 from Vercel's deployment-protection is also fine to just note).
 
 ## Step 6 — Wrap up
 
@@ -134,6 +149,9 @@ Tell the user, in plain language:
 - Their live URL.
 - That the starter page is intentionally minimal (`src/components/ConfiguratorDemo.jsx` has TODOs) — they can just describe what they want changed and you'll edit it.
 - That whenever they want to update the live site, they can just say "push this live" (or similar) and you'll commit, push, and redeploy — they never need to run a command themselves.
+- That they can see changes locally before pushing anything live by just asking you to "start the dev server" — offer to do this proactively now rather than waiting to be asked.
+
+If they want to see it locally, run `npm run dev` in the background (it's a long-running process — always background it, never run it in the foreground) and give them `http://localhost:3000` to open. Note that `.env` changes need the dev server restarted to take effect, but ordinary code edits hot-reload automatically.
 
 ## Handling "push this live" in a later conversation
 
