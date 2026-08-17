@@ -14,6 +14,11 @@ export function useConfigurator() {
   const [loading, setLoading]   = useState(true);
   const [messages, setMessages] = useState([]);
   const [uuid, setUuid]         = useState(null);
+  // The BOM (bill of materials) — the list of priced line items for the
+  // current configuration — comes back as `products` + `total` on every
+  // init/update response. No separate API call is needed for it.
+  const [products, setProducts] = useState([]);
+  const [total, setTotal]       = useState(null);
   const fieldsRef               = useRef({});
 
   useEffect(() => {
@@ -26,6 +31,8 @@ export function useConfigurator() {
         fieldsRef.current = map;
         setFields(map);
         setUuid(data.uuid);
+        setProducts(data.products ?? []);
+        setTotal(data.total ?? null);
       })
       .catch(() => setMessages([{ type: 'error', message: 'Failed to initialize.' }]))
       .finally(() => setLoading(false));
@@ -37,6 +44,8 @@ export function useConfigurator() {
     fieldsRef.current = next;
     setFields({ ...next });
     setMessages(data.messages ?? []);
+    setProducts(data.products ?? []);
+    setTotal(data.total ?? null);
   }, []);
 
   const update = useCallback(async (variableName, value) => {
@@ -73,5 +82,5 @@ export function useConfigurator() {
     }
   }, [uuid, applyResponse]);
 
-  return { fields, loading, messages, uuid, update, updatePickerSelect };
+  return { fields, loading, messages, uuid, products, total, update, updatePickerSelect };
 }

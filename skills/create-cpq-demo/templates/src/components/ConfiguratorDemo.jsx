@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { useConfigurator } from '@/hooks/useConfigurator';
 
+function formatCurrency(value) {
+  if (value === null || value === undefined) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
 export default function ConfiguratorDemo() {
-  const { fields, loading, messages, uuid, update } = useConfigurator();
+  const { fields, loading, messages, uuid, products, total, update } = useConfigurator();
   const [submitting, setSubmitting] = useState(false);
   const [quoteNumber, setQuoteNumber] = useState(null);
 
@@ -48,6 +53,41 @@ export default function ConfiguratorDemo() {
           ))}
         </div>
       )}
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Bill of Materials</h2>
+        {products.length === 0 ? (
+          <p className="muted">No line items yet — select something in the configurator to see it here.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                  <th style={{ padding: '6px 8px' }}>Name</th>
+                  <th style={{ padding: '6px 8px' }}>Code</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qty</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right' }}>Price</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right' }}>Rollup</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.uniqueIdentifier} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '6px 8px', paddingLeft: 8 + (p.level ?? 0) * 16 }}>{p.name}</td>
+                    <td style={{ padding: '6px 8px' }} className="muted">{p.productCode}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>{p.quantity}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>{formatCurrency(p.price)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>{formatCurrency(p.rollUpPrice)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ textAlign: 'right', marginTop: 12, fontWeight: 600 }}>
+              Total: {formatCurrency(total)}
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>You're connected — now build the actual demo</h2>
