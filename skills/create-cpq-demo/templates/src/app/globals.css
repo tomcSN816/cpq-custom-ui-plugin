@@ -1,11 +1,15 @@
 :root {
-  --primary:     #0078d4;
-  --surface:     #ffffff;
-  --bg:          #f4f6f9;
-  --border:      #e2e6ec;
-  --text:        #111827;
-  --text-muted:  #6b7685;
-  --radius:      8px;
+  --primary:       #0078d4;
+  --primary-dark:  #005a9e;
+  --primary-soft:  #eaf3fb;
+  --surface:       #ffffff;
+  --bg:            #f4f6f9;
+  --border:        #e2e6ec;
+  --text:          #111827;
+  --text-muted:    #6b7685;
+  --radius:        10px;
+  --shadow:        0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lg:     0 4px 12px rgba(16, 24, 40, 0.08);
 }
 
 * {
@@ -17,24 +21,79 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar__title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary);
 }
 
 .page {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 28px 24px 48px;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 1fr 360px;
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
 .layout__sidebar {
   position: sticky;
-  top: 24px;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @media (max-width: 800px) {
@@ -50,26 +109,136 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  box-shadow: var(--shadow);
+  padding: 22px;
   margin-bottom: 16px;
 }
 
+.card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+details.card summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  list-style: none;
+}
+
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+details.card[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.hint-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint-list li {
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
 .button {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border: none;
   border-radius: var(--radius);
-  padding: 10px 18px;
+  padding: 11px 18px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: var(--shadow-lg);
 }
 
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.summary-table thead th {
+  text-align: left;
+  padding: 6px 4px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-table tbody tr:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-table td {
+  padding: 9px 4px;
+  vertical-align: top;
+}
+
+.total-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--primary-soft);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+
+.total-bar__label {
+  font-size: 13px;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.total-bar__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
 }
 
 .muted {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+code {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
 }
