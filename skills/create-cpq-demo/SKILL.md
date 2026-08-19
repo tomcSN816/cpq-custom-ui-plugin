@@ -61,7 +61,7 @@ bash "${CLAUDE_SKILL_DIR}/scripts/check_logik.sh" "<base_url>" "<token>" "<produ
 bash "${CLAUDE_SKILL_DIR}/scripts/check_servicenow.sh" "<instance_url>" "<username>" "<password>" "<account_name>"
 ```
 
-**If the Logik check fails with an empty-body 403** (as opposed to a JSON error body, or a 401), this is almost always an **Origin allowlist** problem, not a bad token or product ID: some Logik instances restrict the runtime API to a specific list of allowed Origins (visible as an "Origins" section in the Logik admin console for that instance), and the default guess of `http://localhost:3000` may not be on it. Tell the user plainly what's happening and ask them to check that section and add `http://localhost:3000` (for local dev) to it, then retry the check with that same origin value. Remember the working origin value — you'll need it again in Step 5 for the production URL.
+**If the Logik check fails with an empty-body 403** (as opposed to a JSON error body, or a 401), this is almost always an **Origin allowlist** problem, not a bad token or product ID: some Logik instances restrict the runtime API to a specific list of allowed Origins (visible as an "Origins" section in the Logik admin console for that instance), and the default guess of `http://localhost:3000` may not be on it. Tell the user plainly what's happening and ask them to check that section and add `http://localhost:3000` (for local dev) to it, then retry the check with that same origin value. Remember the working origin value — you'll need it again in Step 6 for the production URL.
 
 Summarize the result for the user in one sentence each ("Logik connection confirmed" / "ServiceNow connection confirmed") — don't paste the raw curl output at them unless something failed and they ask for detail.
 
@@ -95,7 +95,21 @@ Then install dependencies:
 npm install
 ```
 
-## Step 4 — Create a dedicated GitHub repo for this demo
+## Step 4 — Try to use the blueprint's actual designed layout
+
+Before falling back to the generic starter page, make a real effort to build the UI around the blueprint's own designed layout, if one exists and you can reach it. This produces a far better starting point than a flat field list — Logik blueprints are often designed with tabs, sections, and specific field widgets (pickers, sliders, grids) that reflect how the product is actually meant to be presented.
+
+1. Check whether any Logik MCP tools are connected in this session (tool names like `mcp__<connection>__logik_*`). If none are available, skip straight to "If no layout is available" below — don't block or ask the user to set up MCP just for this.
+2. If MCP tools are available, find which connection (if any) points at the same Logik org as `<base_url>`/`<instance_url>` — you can cross-check with `snow_get_current_instance` per connection prefix, the same way you'd match instances for troubleshooting.
+3. Find the blueprint behind this product: search/list configurable products (e.g. `logik_list_configurable_products`) for one matching `<product_id>`, and read its `blueprintVariableName`.
+4. Call `logik_get_blueprint_layouts` for that blueprint name to see what layouts exist. If there's more than one, prefer the one most likely intended for the runtime configurator (skip layouts that look admin-only), or ask the user which to use if it's genuinely ambiguous.
+5. Call `logik_get_blueprint_layout` for the chosen layout and parse the returned structure (tabs, sections, columns, field variable names, and field widget types like Picklist/Number/Radio/Slider/MultiSelectProductPickerGrid/ReadOnlyText).
+6. Build `src/components/ConfiguratorDemo.jsx` to mirror that structure as closely as reasonably possible: tabs for top-level groups, sections within tabs, fields laid out in the same columns/order, and a sensible React control per widget type — all wired to the existing `fields`, `update`, and `updatePickerSelect` from `useConfigurator()`. Keep the BOM sidebar and Submit Quote button from the base template; they don't come from the layout. `FieldControl.jsx` (bundled in this template) is a generic per-field renderer driven by `dataType`/`optionSet` — reuse it rather than writing bespoke controls per field, and pass it a per-field config object (name, label, and any widget override) rather than hand-writing JSX per field.
+7. **The API's `editable` flag is not the same thing as the layout's `ReadOnlyText`/`ReadOnlyCurrency` widget type** — a field can be `editable: "true"` on the wire while the layout still intends it as a computed/informational display. Don't rely on `editable` alone to decide what's read-only; carry the layout's widget type into your per-field config (e.g. a `readOnly: true` flag) and pass that to `FieldControl`, which accepts a `readOnly` prop for exactly this case.
+
+**If no layout is available** (no MCP tools connected, no matching connection found, blueprint/layout lookup fails, or the layout content isn't something you can confidently map to a UI), don't get stuck — just leave the template's default starter page as-is (the field-list + BOM sidebar placeholder) and say so plainly to the user, e.g. "I couldn't pull a designed layout for this blueprint, so I've left the generic starter page in place — describe what you'd like built and I'll take it from there." This is a best-effort enhancement, not a gate on finishing the rest of setup.
+
+## Step 5 — Create a dedicated GitHub repo for this demo
 
 Important: every demo gets **its own new repo** — do not reuse or accumulate demos inside one shared repo.
 
@@ -109,7 +123,7 @@ gh repo create <demo-name> --private --source=. --push
 
 If `gh repo create` fails because the name is taken, ask the user for a different name (e.g. append their initials) and retry — don't silently pick something for them.
 
-## Step 5 — Create the Vercel project and deploy
+## Step 6 — Create the Vercel project and deploy
 
 ```bash
 cd ~/cpq-demos/<demo-name>
@@ -143,7 +157,7 @@ Tell the user they need to add `<production_url>` to the Origins allowlist in th
 
 Give the user the production URL directly. Confirm the site loads (you can `curl -sI <url>` and check for a 200/30x, though a 401 from Vercel's deployment-protection is also fine to just note).
 
-## Step 6 — Wrap up
+## Step 7 — Wrap up
 
 Tell the user, in plain language:
 - Their live URL.
@@ -164,4 +178,4 @@ git push
 vercel --prod --yes
 ```
 
-If any new env vars were introduced since the last deploy, add them with `vercel env add` (as in Step 5) before running `vercel --prod --yes`. Report the resulting URL back to the user.
+If any new env vars were introduced since the last deploy, add them with `vercel env add` (as in Step 6) before running `vercel --prod --yes`. Report the resulting URL back to the user.
