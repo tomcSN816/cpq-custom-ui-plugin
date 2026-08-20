@@ -60,6 +60,18 @@ export function useConfigurator() {
 
   const update = useCallback(async (variableName, value) => {
     if (!uuid) return;
+
+    // Optimistic update — Logik's update response only echoes back fields
+    // that changed as a RULE side-effect, not necessarily the field you
+    // just set yourself. Without this, clicking an option can look like it
+    // did nothing, because the field you changed may never come back in
+    // the response's `fields` delta for applyResponse to merge in.
+    const current = fieldsRef.current[variableName];
+    if (current) {
+      fieldsRef.current = { ...fieldsRef.current, [variableName]: { ...current, value, userEdited: true } };
+      setFields({ ...fieldsRef.current });
+    }
+
     setLoading(true);
     try {
       const data = await updateConfig(uuid, [{ variableName, value }]);
@@ -72,11 +84,21 @@ export function useConfigurator() {
   const updatePickerSelect = useCallback(async (selectVarName, selected, pickerVarName, rowIndex) => {
     if (!uuid) return;
 
+    // Same optimistic-update reasoning as `update` above, but the field
+    // we're changing lives nested inside `rows.content[i].fields`, not at
+    // the top level — update that specific sub-field entry, not a bogus
+    // key on the row itself.
     const current = fieldsRef.current[pickerVarName];
     if (current?.rows?.content?.[rowIndex] !== undefined) {
-      const rows = current.rows.content.map((r, i) =>
-        i !== rowIndex ? r : { ...r, [selectVarName]: { value: selected, userEdited: true } }
-      );
+      const rows = current.rows.content.map((r, i) => {
+        if (i !== rowIndex) return r;
+        return {
+          ...r,
+          fields: r.fields.map((f) =>
+            f.variableName === selectVarName ? { ...f, value: selected, userEdited: true } : f
+          ),
+        };
+      });
       const updated = { ...current, rows: { ...current.rows, content: rows } };
       fieldsRef.current = { ...fieldsRef.current, [pickerVarName]: updated };
       setFields({ ...fieldsRef.current });
