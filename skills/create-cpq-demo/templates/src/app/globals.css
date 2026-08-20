@@ -253,12 +253,10 @@ code {
 }
 
 .field-readonly {
-  padding: 9px 10px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 4px 0;
   font-size: 14px;
   color: var(--text-muted);
+  white-space: pre-line;
 }
 
 .field-input {
