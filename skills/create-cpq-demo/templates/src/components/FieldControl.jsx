@@ -13,7 +13,32 @@
 // "true"` on the wire while still being intended as computed/informational.
 // Pass `readOnly` explicitly from the layout config for fields like that;
 // don't rely on `editable` alone to decide.
-export default function FieldControl({ field, label, widget, min = 1, max = 10, readOnly = false, onChange }) {
+//
+// `messages`: pass the subset of the session's `messages` array whose
+// `field`/`target` matches this field's variableName (and, for a row inside
+// a picker grid, the row's index too) — see ConfiguratorDemo.jsx for the
+// matching helper. Rendered inline under the control, which is what rule
+// feedback like "4 entities, notional cash pooling could significantly
+// reduce idle cash." is actually about — showing it in a generic list at
+// the top of the page loses that context.
+function FieldMessages({ messages }) {
+  if (!messages?.length) return null;
+  return (
+    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {messages.map((m, i) => (
+        <div
+          key={i}
+          className="muted"
+          style={{ color: m.type === 'error' || m.error ? '#b42318' : 'var(--text-muted)' }}
+        >
+          {m.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function FieldControl({ field, label, widget, min = 1, max = 10, readOnly = false, messages = [], onChange }) {
   if (!field) return null;
 
   const disabled = readOnly || field.editable === 'false';
@@ -26,6 +51,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
       <div>
         <div className="field-label">{label}</div>
         <div className="field-readonly">{displayValue}</div>
+        <FieldMessages messages={messages} />
       </div>
     );
   }
@@ -46,6 +72,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
             </button>
           ))}
         </div>
+        <FieldMessages messages={messages} />
       </div>
     );
   }
@@ -77,6 +104,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
             );
           })}
         </div>
+        <FieldMessages messages={messages} />
       </div>
     );
   }
@@ -95,6 +123,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
           onChange={(e) => onChange(Number(e.target.value))}
           style={{ width: '100%' }}
         />
+        <FieldMessages messages={messages} />
       </div>
     );
   }
@@ -113,6 +142,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
+        <FieldMessages messages={messages} />
       </div>
     );
   }
@@ -126,6 +156,7 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
         value={field.value ?? ''}
         onChange={(e) => onChange(field.dataType === 'number' ? Number(e.target.value) : e.target.value)}
       />
+      <FieldMessages messages={messages} />
     </div>
   );
 }
