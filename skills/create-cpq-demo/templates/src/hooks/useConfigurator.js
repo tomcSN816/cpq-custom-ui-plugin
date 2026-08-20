@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { initConfig, updateConfig } from '@/lib/logik';
+import { initConfig, updateConfig, getBom } from '@/lib/logik';
 
 function buildFieldMap(fieldsArray) {
   const map = {};
@@ -15,8 +15,10 @@ export function useConfigurator() {
   const [messages, setMessages] = useState([]);
   const [uuid, setUuid]         = useState(null);
   // The BOM (bill of materials) — the list of priced line items for the
-  // current configuration — comes back as `products` + `total` on every
-  // init/update response. No separate API call is needed for it.
+  // current configuration. `products`/`total` on the init/update response
+  // itself are unreliable (Logik often returns `products: null` and no
+  // `total` on ordinary field updates) — always refresh via the dedicated
+  // GET /api/{uuid}/bom endpoint (see lib/logik.js `getBom`) instead.
   const [products, setProducts] = useState([]);
   const [total, setTotal]       = useState(null);
   const fieldsRef               = useRef({});
@@ -26,26 +28,34 @@ export function useConfigurator() {
     const pricebookId = process.env.NEXT_PUBLIC_LOGIK_PRICEBOOK_ID || undefined;
 
     initConfig(productId, pricebookId)
-      .then((data) => {
+      .then(async (data) => {
         const map = buildFieldMap(data.fields ?? []);
         fieldsRef.current = map;
         setFields(map);
         setUuid(data.uuid);
-        setProducts(data.products ?? []);
-        setTotal(data.total ?? null);
+        const bom = await getBom(data.uuid).catch(() => null);
+        setProducts(bom?.products ?? data.products ?? []);
+        setTotal(bom?.total ?? data.total ?? null);
       })
       .catch(() => setMessages([{ type: 'error', message: 'Failed to initialize.' }]))
       .finally(() => setLoading(false));
   }, []);
 
-  const applyResponse = useCallback((data) => {
+  const applyResponse = useCallback(async (data) => {
     const next = { ...fieldsRef.current };
     for (const f of data.fields ?? []) next[f.variableName] = f;
     fieldsRef.current = next;
     setFields({ ...next });
     setMessages(data.messages ?? []);
-    setProducts(data.products ?? []);
-    setTotal(data.total ?? null);
+
+    const bom = await getBom(data.uuid).catch(() => null);
+    if (bom) {
+      setProducts(bom.products ?? []);
+      setTotal(bom.total ?? null);
+    }
+    // If the BOM fetch itself fails, keep showing the last known-good BOM
+    // rather than clearing it — don't fall back to data.products/data.total
+    // here, since those are the unreliable inline values this exists to avoid.
   }, []);
 
   const update = useCallback(async (variableName, value) => {
@@ -53,7 +63,7 @@ export function useConfigurator() {
     setLoading(true);
     try {
       const data = await updateConfig(uuid, [{ variableName, value }]);
-      applyResponse(data);
+      await applyResponse(data);
     } finally {
       setLoading(false);
     }
@@ -76,7 +86,7 @@ export function useConfigurator() {
       const data = await updateConfig(uuid, [
         { variableName: selectVarName, value: selected, set: pickerVarName, index: rowIndex },
       ]);
-      applyResponse(data);
+      await applyResponse(data);
     } catch (err) {
       console.error('Picker select error', err);
     }
