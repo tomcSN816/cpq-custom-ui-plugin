@@ -28,7 +28,17 @@ export default function ConfiguratorDemo() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: [],       // TODO: map selected products/fields into { name, price } objects
+          // TODO: map selected products/fields into { name, price } objects.
+          // The BOM (`products`) includes container/category nodes (e.g.
+          // "Cash Management") alongside real line items — a container's
+          // rollUpPrice is just the SUM of its children's prices, so
+          // including both double-counts the cost. Exclude any product
+          // whose `id` is referenced as another product's `parentProduct`;
+          // the root product (matched by partnerId === the configured
+          // product ID) is always a real line item regardless:
+          //   const parentIds = new Set(products.map(p => p.parentProduct).filter(Boolean));
+          //   products.filter(p => p.partnerId === rootProductId || !parentIds.has(p.id))
+          items: [],
           logikUuid: uuid,
         }),
       });
