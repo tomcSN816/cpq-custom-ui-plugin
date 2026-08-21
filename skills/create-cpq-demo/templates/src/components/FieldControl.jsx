@@ -185,6 +185,12 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
         className="field-input"
         type={field.dataType === 'number' ? 'number' : 'text'}
         value={field.value ?? ''}
+        // Select the existing value on focus so typing replaces it instead
+        // of inserting before/after it — without this, clicking into a
+        // number field that starts at 0 and typing "1000" produces "01000"
+        // (cursor lands after the existing digit rather than the whole
+        // value being selected).
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onChange(field.dataType === 'number' ? Number(e.target.value) : e.target.value)}
       />
       <FieldMessages messages={messages} />
