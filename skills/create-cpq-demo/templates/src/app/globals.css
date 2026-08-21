@@ -418,3 +418,27 @@ code {
 @keyframes modal-spin {
   to { transform: rotate(360deg); }
 }
+
+.loading-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  animation: modal-spin 0.7s linear infinite;
+}
+
+.loading-screen-subtext {
+  color: var(--text-muted);
+  font-size: 14px;
+}
