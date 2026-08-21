@@ -77,6 +77,15 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
     );
   }
 
+  // `dataType: "array"` does NOT necessarily mean a simple multi-select —
+  // some fields with this dataType are actually row-based picker grids
+  // (MultiSelectProductPickerGrid) with a `field.rows.content` structure,
+  // where each row must be toggled via `updatePickerSelect` on a nested
+  // `<name>.select` sub-field, not via a plain `update(name, newArray)`
+  // call on this top-level field (that update gets silently ignored).
+  // Check `field.rows` before reaching this branch — if present, render
+  // the rows yourself (see ConfiguratorDemo.jsx's Add-ons grid handling)
+  // instead of routing it through this generic checkbox-list branch.
   if (field.dataType === 'array') {
     const selected = Array.isArray(field.value) ? field.value : [];
     return (
