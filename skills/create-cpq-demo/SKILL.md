@@ -89,6 +89,8 @@ SN_PASSWORD="<password>"
 SN_ACCOUNT_NAME="<account_name>"
 ```
 
+**Escape any literal `$` in these values as `\$` before writing them** (e.g. a password like `Abc$123` must be written as `Abc\$123`). Next.js's `.env` loader treats an unescaped `$NAME` as a variable reference and silently replaces it with an empty string when no such variable exists — no error, just a truncated secret. This has actually happened (a `$`-containing SN password got silently truncated, breaking auth, which then got misreported as "account not found" until traced back to this). Don't skip this check just because the value "looks fine" — the truncation is invisible unless you go looking for it.
+
 Then install dependencies:
 
 ```bash
