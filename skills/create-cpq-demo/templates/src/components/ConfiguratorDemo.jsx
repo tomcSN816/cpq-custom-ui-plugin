@@ -28,16 +28,22 @@ export default function ConfiguratorDemo() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // TODO: map selected products/fields into { name, price } objects.
-          // The BOM (`products`) includes container/category nodes (e.g.
-          // "Cash Management") alongside real line items — a container's
-          // rollUpPrice is just the SUM of its children's prices, so
-          // including both double-counts the cost. Exclude any product
-          // whose `id` is referenced as another product's `parentProduct`;
-          // the root product (matched by partnerId === the configured
-          // product ID) is always a real line item regardless:
-          //   const parentIds = new Set(products.map(p => p.parentProduct).filter(Boolean));
-          //   products.filter(p => p.partnerId === rootProductId || !parentIds.has(p.id))
+          // TODO: map `products` (the BOM) into items for the API route.
+          // Send the FULL tree, not a filtered/flattened list — the route
+          // is what decides pricing/hierarchy (container nodes get priced
+          // at 0 and linked via parent_line_item, not excluded; see its
+          // comments). Each entry needs:
+          //   { id, name, parentProduct, isRoot, price, quantity, uniqueIdentifier }
+          // e.g.:
+          //   products.map(p => ({
+          //     id: p.id,
+          //     name: p.name || p.id,
+          //     parentProduct: p.parentProduct ?? null,
+          //     isRoot: p.partnerId === process.env.NEXT_PUBLIC_LOGIK_PRODUCT_ID,
+          //     price: p.rollUpPrice ?? 0,
+          //     quantity: p.quantity ?? 1,
+          //     uniqueIdentifier: p.uniqueIdentifier,
+          //   }))
           items: [],
           logikUuid: uuid,
         }),
