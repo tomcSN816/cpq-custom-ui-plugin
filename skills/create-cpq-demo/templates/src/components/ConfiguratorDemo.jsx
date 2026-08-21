@@ -47,12 +47,6 @@ export default function ConfiguratorDemo() {
         <div className="topbar__inner">
           <div className="topbar__title">{demoTitle}</div>
           <div className="topbar__spacer" />
-          {uuid && (
-            <span className="pill">
-              <span className="pill__dot" />
-              Session {uuid.slice(0, 8)} · {fieldNames.length} fields
-            </span>
-          )}
         </div>
       </div>
 
