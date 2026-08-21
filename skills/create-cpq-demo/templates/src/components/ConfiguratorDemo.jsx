@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
 import { useConfigurator } from '@/hooks/useConfigurator';
+import SubmitProgressModal, { useSubmitProgress } from '@/components/SubmitProgressModal';
 
 function formatCurrency(value) {
   if (value === null || value === undefined) return '—';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 }
 
+const SUBMIT_STEPS = ['Resolving account', 'Creating quote', 'Adding line items', 'Done'];
+
 export default function ConfiguratorDemo() {
   const { fields, loading, messages, uuid, products, total, update } = useConfigurator();
-  const [submitting, setSubmitting] = useState(false);
-  const [quoteNumber, setQuoteNumber] = useState(null);
+  const progress = useSubmitProgress(SUBMIT_STEPS);
 
   // The root configured product (matched by the product ID we requested) is
   // where the blueprint's real, human-facing name lives — use it instead of
@@ -22,7 +23,7 @@ export default function ConfiguratorDemo() {
   const demoTitle = rootProduct?.name || 'CPQ Demo';
 
   async function handleSubmit() {
-    setSubmitting(true);
+    progress.start();
     try {
       const res = await fetch('/api/servicenow', {
         method: 'POST',
@@ -49,9 +50,10 @@ export default function ConfiguratorDemo() {
         }),
       });
       const data = await res.json();
-      setQuoteNumber(data.quoteNumber ?? null);
-    } finally {
-      setSubmitting(false);
+      if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+      progress.succeed(data.quoteNumber ? `Created quote ${data.quoteNumber}.` : 'Submitted.');
+    } catch (err) {
+      progress.fail(err.message);
     }
   }
 
@@ -174,9 +176,9 @@ export default function ConfiguratorDemo() {
                     className="button"
                     style={{ width: '100%' }}
                     onClick={handleSubmit}
-                    disabled={submitting || !uuid}
+                    disabled={progress.status === 'running' || !uuid}
                   >
-                    {submitting ? 'Submitting…' : 'Submit Quote'}
+                    Submit Quote
                   </button>
                   <p className="muted" style={{ marginTop: 10, marginBottom: 0 }}>
                     This button already calls the ServiceNow quote API — it just isn&apos;t
@@ -184,10 +186,17 @@ export default function ConfiguratorDemo() {
                     should become quote line items and it&apos;ll fill in the{' '}
                     <code>items</code> array in this component&apos;s <code>handleSubmit</code>.
                   </p>
-                  {quoteNumber && <p className="muted">Created quote {quoteNumber}</p>}
                 </div>
               </div>
             </div>
+
+            <SubmitProgressModal
+              steps={SUBMIT_STEPS}
+              status={progress.status}
+              stepIndex={progress.stepIndex}
+              resultMessage={progress.resultMessage}
+              onClose={progress.close}
+            />
           </>
         )}
       </main>
