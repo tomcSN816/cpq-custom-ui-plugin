@@ -87,32 +87,54 @@ export default function FieldControl({ field, label, widget, min = 1, max = 10, 
   // the rows yourself (see ConfiguratorDemo.jsx's Add-ons grid handling)
   // instead of routing it through this generic checkbox-list branch.
   if (field.dataType === 'array') {
+    // Chips for what's selected (with a way to remove, unless the option
+    // is itself locked/mandatory) + a dropdown to add more. Scales much
+    // better than a long checkbox list once there are more than a
+    // handful of options (e.g. a list of currencies or countries).
     const selected = Array.isArray(field.value) ? field.value : [];
+    const selectableToAdd = options.filter(
+      (opt) => !selected.includes(opt.value) && opt.state !== 'disabled'
+    );
     return (
       <div>
         <div className="field-label">{label}</div>
-        <div className="field-checkbox-group">
-          {options.map((opt) => {
-            const isSelected = selected.includes(opt.value);
-            const isDisabled = opt.state === 'disabled';
+        <div className="chip-group">
+          {selected.length === 0 && <span className="muted">None selected</span>}
+          {selected.map((value) => {
+            const opt = options.find((o) => o.value === value);
+            const isLocked = opt?.state === 'disabled';
             return (
-              <label key={opt.value} className="field-checkbox">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  disabled={isDisabled}
-                  onChange={() => {
-                    const next = isSelected
-                      ? selected.filter((v) => v !== opt.value)
-                      : [...selected, opt.value];
-                    onChange(next);
-                  }}
-                />
-                {opt.label}
-              </label>
+              <span key={value} className="chip">
+                {opt?.label ?? value}
+                {!isLocked && (
+                  <button
+                    type="button"
+                    className="chip__remove"
+                    aria-label={`Remove ${opt?.label ?? value}`}
+                    onClick={() => onChange(selected.filter((v) => v !== value))}
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             );
           })}
         </div>
+        {selectableToAdd.length > 0 && (
+          <select
+            className="field-input"
+            style={{ marginTop: 8 }}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) onChange([...selected, e.target.value]);
+            }}
+          >
+            <option value="">+ Add…</option>
+            {selectableToAdd.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        )}
         <FieldMessages messages={messages} />
       </div>
     );
