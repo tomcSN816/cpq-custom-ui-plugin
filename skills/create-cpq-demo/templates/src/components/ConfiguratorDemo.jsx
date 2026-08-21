@@ -72,8 +72,8 @@ export default function ConfiguratorDemo() {
         {loading && !uuid ? (
           <div className="loading-screen">
             <div className="spinner" aria-hidden="true" />
-            <div>Loading your configurator…</div>
-            <div className="loading-screen-subtext">Connecting to Logik and pulling in your blueprint&apos;s fields.</div>
+            <div>Setting things up…</div>
+            <div className="loading-screen-subtext">Just a moment while we get everything ready.</div>
           </div>
         ) : (
           <>
