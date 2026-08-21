@@ -72,8 +72,8 @@ export default function ConfiguratorDemo() {
         {loading && !uuid ? (
           <div className="loading-screen">
             <div className="spinner" aria-hidden="true" />
-            <div>Setting things up…</div>
-            <div className="loading-screen-subtext">Just a moment while we get everything ready.</div>
+            <div>Preparing your experience</div>
+            <div className="loading-screen-subtext">This will only take a moment.</div>
           </div>
         ) : (
           <>
